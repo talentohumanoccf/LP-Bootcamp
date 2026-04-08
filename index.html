@@ -57,7 +57,7 @@
         <div class="max-w-md w-full glass-card p-8 rounded-lg neon-border-cyan text-center">
             <i data-lucide="shield" class="w-16 h-16 text-cyan-400 mx-auto mb-6 animate-pulse"></i>
             <h1 class="text-3xl font-bold tracking-widest text-cyan-400 mb-2">OPERACIÓN NEÓN</h1>
-            <p class="text-gray-400 text-xs mb-8 uppercase tracking-widest">Acceso Restringido - Sincronización Sheets</p>
+            <p class="text-gray-400 text-xs mb-8 uppercase tracking-widest">Acceso Restringido - Sincronización Segura</p>
             
             <div class="space-y-6 text-left">
                 <div>
@@ -65,14 +65,15 @@
                     <input type="text" id="agent-input" placeholder="Introduce tu ID..." 
                         class="w-full bg-black/50 border border-cyan-500/50 p-3 rounded text-cyan-100 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all">
                 </div>
-                <button onclick="handleLogin()" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 group">
+                <button id="login-btn" onclick="handleLogin()" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 group">
                     Iniciar Infiltración <i data-lucide="chevron-right" class="group-hover:translate-x-1 transition-transform"></i>
                 </button>
+                <div id="login-error" class="hidden text-red-500 text-[10px] text-center uppercase mt-2">Error de autenticación. Reintenta.</div>
             </div>
         </div>
     </div>
 
-    <!-- Dashboard Principal (Oculto por defecto) -->
+    <!-- Dashboard Principal -->
     <div id="dashboard" class="hidden min-h-screen p-4 md:p-8 flex flex-col gap-6">
         
         <!-- Header -->
@@ -84,7 +85,7 @@
                         <h1 class="text-2xl font-bold tracking-widest text-pink-500 uppercase">Operación Neón</h1>
                     </div>
                     <div id="sync-indicator" class="hidden items-center gap-2 text-[10px] text-cyan-400 animate-pulse bg-cyan-400/10 px-3 py-1 rounded-full border border-cyan-400/30">
-                        <i data-lucide="refresh-cw" class="w-3 h-3 animate-spin"></i> SINCRONIZANDO CON SHEETS...
+                        <i data-lucide="refresh-cw" class="w-3 h-3 animate-spin"></i> SINCRONIZANDO...
                     </div>
                 </div>
                 
@@ -182,7 +183,7 @@
                     <div class="p-4 bg-black/60 border-t border-white/10 flex gap-3">
                         <input type="text" id="chat-input" placeholder="Escribe un mensaje para el equipo..."
                             class="flex-grow bg-black/40 border border-white/10 rounded px-4 text-xs focus:outline-none focus:border-cyan-500 transition-colors">
-                        <button onclick="sendComment()" class="bg-cyan-500 hover:bg-cyan-400 px-6 py-2 rounded text-xs font-bold uppercase flex items-center gap-2 transition-all active:scale-95 shadow-[0_0_10px_rgba(6,182,212,0.3)]">
+                        <button id="send-btn" onclick="sendComment()" class="bg-cyan-500 hover:bg-cyan-400 px-6 py-2 rounded text-xs font-bold uppercase flex items-center gap-2 transition-all active:scale-95 shadow-[0_0_10px_rgba(6,182,212,0.3)]">
                             Enviar <i data-lucide="send" class="w-3.5 h-3.5"></i>
                         </button>
                     </div>
@@ -194,7 +195,7 @@
             <span id="agent-footer-id">Agente ID: ---</span>
             <div class="flex gap-4">
                 <span class="text-green-500/50">GITHUB REPOSITORY ACTIVE</span>
-                <span class="text-pink-500/30">Protocolo Neón v3.2</span>
+                <span class="text-pink-500/30">Protocolo Neón v3.3</span>
             </div>
         </footer>
     </div>
@@ -202,7 +203,7 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- CONFIGURACIÓN ---
@@ -222,7 +223,8 @@
             completedMissions: [],
             timeLeft: 174615,
             currentMissionId: null,
-            randomReto: ""
+            randomReto: "",
+            isAuthenticated: false
         };
 
         const missions = [
@@ -242,40 +244,70 @@
         // --- LÓGICA DE NEGOCIO ---
 
         window.handleLogin = async () => {
-            const name = document.getElementById('agent-input').value.trim();
+            const nameInput = document.getElementById('agent-input');
+            const loginBtn = document.getElementById('login-btn');
+            const name = nameInput.value.trim();
             if (!name) return;
 
+            loginBtn.disabled = true;
+            loginBtn.innerText = "ACCEDIENDO...";
             state.agentName = name;
             
-            // Firebase Auth
-            await signInAnonymously(auth);
-            
-            // Check existing user
-            const agentRef = doc(db, 'artifacts', appId, 'public', 'data', 'agents', auth.currentUser.uid);
-            const agentSnap = await getDoc(agentRef);
-
-            if (agentSnap.exists()) {
-                const data = agentSnap.data();
-                state.completedMissions = data.completedMissions || [];
-                state.progress = data.progress || 0;
-                state.agentName = data.name;
-            } else {
-                await setDoc(agentRef, {
-                    name: state.agentName,
-                    completedMissions: [],
-                    progress: 0,
-                    createdAt: serverTimestamp()
-                });
-                await syncToSheets("Acceso de Agente", "Registro inicial de misión");
+            try {
+                // Autenticación según reglas estrictas
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Auth Error:", error);
+                document.getElementById('login-error').classList.remove('hidden');
+                loginBtn.disabled = false;
+                loginBtn.innerText = "REINTENTAR INFILTRACIÓN";
+                return;
             }
-
-            state.userId = auth.currentUser.uid;
-            document.getElementById('login-overlay').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('hidden');
-            
-            initDashboard();
-            startListeners();
         };
+
+        // Escuchar cambios de autenticación para activar el sistema
+        onAuthStateChanged(auth, async (user) => {
+            if (user && state.agentName && !state.isAuthenticated) {
+                state.isAuthenticated = true;
+                state.userId = user.uid;
+                
+                try {
+                    // Check existing user en ruta permitida
+                    const agentRef = doc(db, 'artifacts', appId, 'public', 'data', 'agents', user.uid);
+                    const agentSnap = await getDoc(agentRef);
+
+                    if (agentSnap.exists()) {
+                        const data = agentSnap.data();
+                        state.completedMissions = data.completedMissions || [];
+                        state.progress = data.progress || 0;
+                        state.agentName = data.name || state.agentName;
+                    } else {
+                        await setDoc(agentRef, {
+                            name: state.agentName,
+                            completedMissions: [],
+                            progress: 0,
+                            createdAt: serverTimestamp()
+                        });
+                        await syncToSheets("Acceso de Agente", "Registro inicial de misión");
+                    }
+
+                    // Pasar al dashboard
+                    document.getElementById('login-overlay').classList.add('hidden');
+                    document.getElementById('dashboard').classList.remove('hidden');
+                    
+                    initDashboard();
+                    startListeners();
+
+                } catch (error) {
+                    console.error("Firestore Init Error:", error);
+                    alert("Error de conexión con la base de datos. Verifica tu conexión.");
+                }
+            }
+        });
 
         const initDashboard = () => {
             document.getElementById('display-agent-name').innerText = state.agentName;
@@ -289,21 +321,25 @@
         const startListeners = () => {
             // Timer
             setInterval(() => {
-                state.timeLeft--;
-                const h = Math.floor(state.timeLeft / 3600);
-                const m = Math.floor((state.timeLeft % 3600) / 60);
-                const s = state.timeLeft % 60;
-                document.getElementById('timer-h').innerText = String(h).padStart(2, '0');
-                document.getElementById('timer-m').innerText = String(m).padStart(2, '0');
-                document.getElementById('timer-s').innerText = String(s).padStart(2, '0');
+                if (state.timeLeft > 0) {
+                    state.timeLeft--;
+                    const h = Math.floor(state.timeLeft / 3600);
+                    const m = Math.floor((state.timeLeft % 3600) / 60);
+                    const s = state.timeLeft % 60;
+                    document.getElementById('timer-h').innerText = String(h).padStart(2, '0');
+                    document.getElementById('timer-m').innerText = String(m).padStart(2, '0');
+                    document.getElementById('timer-s').innerText = String(s).padStart(2, '0');
+                }
             }, 1000);
 
-            // Firestore Comments
+            // Firestore Comments con callback de error obligatorio
             const q = collection(db, 'artifacts', appId, 'public', 'data', 'comments');
             onSnapshot(q, (snapshot) => {
                 const messages = snapshot.docs.map(doc => doc.data());
                 messages.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
                 renderChat(messages);
+            }, (error) => {
+                console.error("Snapshot Comments Error:", error);
             });
         };
 
@@ -366,7 +402,7 @@
                             <p class="text-xl italic text-white">"${state.randomReto}"</p>
                         </div>
                         <textarea id="m1-data" placeholder="Pega tus Emojis aquí..." class="w-full bg-black/40 border border-white/10 rounded-lg p-4 text-3xl focus:ring-0 resize-none h-32"></textarea>
-                        <button onclick="window.completeMission(1)" class="w-full bg-pink-600 hover:bg-pink-500 py-4 rounded uppercase font-bold">Transmitir Evidencia</button>
+                        <button id="complete-m1" onclick="window.completeMission(1)" class="w-full bg-pink-600 hover:bg-pink-500 py-4 rounded uppercase font-bold">Transmitir Evidencia</button>
                     </div>
                 `;
             } else if (id === 2) {
@@ -378,7 +414,7 @@
                             <iframe class="w-full aspect-video rounded border border-white/10" src="https://www.youtube.com/embed/x02iTy9bBQs"></iframe>
                         </div>
                         <textarea id="m2-data" class="w-full bg-black/40 border border-white/10 p-4 rounded text-sm" placeholder="Análisis táctico..."></textarea>
-                        <button onclick="window.completeMission(2)" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded uppercase font-bold">Enviar Reporte</button>
+                        <button id="complete-m2" onclick="window.completeMission(2)" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded uppercase font-bold">Enviar Reporte</button>
                     </div>
                 `;
             } else if (id === 3) {
@@ -389,7 +425,7 @@
                             <p class="text-lg text-white mb-6">"Escribe algo que todos saben… pero nadie aplica."</p>
                             <textarea id="m3-data" class="w-full bg-black/60 border border-cyan-500/50 p-4 rounded text-cyan-100" placeholder="Aporta tu sabiduría..."></textarea>
                         </div>
-                        <button onclick="window.completeMission(3)" class="w-full bg-gradient-to-r from-pink-600 to-cyan-600 py-5 rounded-lg uppercase font-black">Finalizar Operación</button>
+                        <button id="complete-m3" onclick="window.completeMission(3)" class="w-full bg-gradient-to-r from-pink-600 to-cyan-600 py-5 rounded-lg uppercase font-black">Finalizar Operación</button>
                     </div>
                 `;
             }
@@ -397,47 +433,59 @@
         };
 
         window.completeMission = async (id) => {
+            if (!auth.currentUser) return;
+
+            const btn = document.getElementById(`complete-m${id}`);
             const detailElement = document.getElementById(`m${id}-data`);
             const detail = detailElement ? detailElement.value : "";
             
-            state.completedMissions.push(id);
-            state.currentMissionId = null;
-            
-            const agentRef = doc(db, 'artifacts', appId, 'public', 'data', 'agents', state.userId);
-            await updateDoc(agentRef, {
-                completedMissions: state.completedMissions,
-                progress: Math.round((state.completedMissions.length / missions.length) * 100),
-                lastUpdate: serverTimestamp()
-            });
+            btn.disabled = true;
+            btn.innerText = "TRASMITIENDO...";
 
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'comments'), {
-                user: state.agentName,
-                text: `¡Misión ${id} completada exitosamente!`,
-                type: 'system',
-                timestamp: serverTimestamp()
-            });
+            try {
+                state.completedMissions.push(id);
+                state.currentMissionId = null;
+                
+                const agentRef = doc(db, 'artifacts', appId, 'public', 'data', 'agents', auth.currentUser.uid);
+                await updateDoc(agentRef, {
+                    completedMissions: state.completedMissions,
+                    progress: Math.round((state.completedMissions.length / missions.length) * 100),
+                    lastUpdate: serverTimestamp()
+                });
 
-            await syncToSheets(`Misión ${id} completada`, detail);
-            
-            initDashboard();
-            
-            if (state.completedMissions.length === 3) {
-                document.getElementById('mission-content').innerHTML = `
-                    <div class="h-full flex flex-col items-center justify-center text-center space-y-6">
-                        <i data-lucide="trophy" class="w-20 h-20 text-yellow-400 animate-bounce"></i>
-                        <h3 class="text-3xl font-bold uppercase tracking-widest">¡Extracción Completa!</h3>
-                        <p class="text-cyan-400 font-bold uppercase tracking-widest">🎖️ Agente certificado para el bootcamp 🎖️</p>
-                    </div>
-                `;
-                lucide.createIcons();
-            } else {
-                document.getElementById('mission-content').innerHTML = `
-                    <div class="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-40">
-                        <i data-lucide="zap" class="w-12 h-12 text-cyan-400 animate-pulse"></i>
-                        <p class="text-xs uppercase tracking-[0.2em]">Selecciona el siguiente objetivo</p>
-                    </div>
-                `;
-                lucide.createIcons();
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'comments'), {
+                    user: state.agentName,
+                    text: `¡Misión ${id} completada exitosamente!`,
+                    type: 'system',
+                    timestamp: serverTimestamp()
+                });
+
+                await syncToSheets(`Misión ${id} completada`, detail);
+                
+                initDashboard();
+                
+                if (state.completedMissions.length === 3) {
+                    document.getElementById('mission-content').innerHTML = `
+                        <div class="h-full flex flex-col items-center justify-center text-center space-y-6">
+                            <i data-lucide="trophy" class="w-20 h-20 text-yellow-400 animate-bounce"></i>
+                            <h3 class="text-3xl font-bold uppercase tracking-widest">¡Extracción Completa!</h3>
+                            <p class="text-cyan-400 font-bold uppercase tracking-widest">🎖️ Agente certificado para el bootcamp 🎖️</p>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                } else {
+                    document.getElementById('mission-content').innerHTML = `
+                        <div class="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-40">
+                            <i data-lucide="zap" class="w-12 h-12 text-cyan-400 animate-pulse"></i>
+                            <p class="text-xs uppercase tracking-[0.2em]">Selecciona el siguiente objetivo</p>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                }
+            } catch (error) {
+                console.error("Complete Mission Error:", error);
+                btn.disabled = false;
+                btn.innerText = "REINTENTAR ENVÍO";
             }
         };
 
@@ -461,18 +509,28 @@
         };
 
         window.sendComment = async () => {
+            if (!auth.currentUser) return;
             const input = document.getElementById('chat-input');
+            const btn = document.getElementById('send-btn');
             const text = input.value.trim();
             if (!text) return;
 
+            btn.disabled = true;
             input.value = '';
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'comments'), {
-                user: state.agentName,
-                text: text,
-                type: 'text',
-                timestamp: serverTimestamp()
-            });
-            await syncToSheets("Nuevo comentario", text);
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'comments'), {
+                    user: state.agentName,
+                    text: text,
+                    type: 'text',
+                    timestamp: serverTimestamp()
+                });
+                await syncToSheets("Nuevo comentario", text);
+            } catch (error) {
+                console.error("Send Comment Error:", error);
+            } finally {
+                btn.disabled = false;
+            }
         };
 
         const syncToSheets = async (action, detail = "") => {
@@ -481,6 +539,7 @@
             indicator.classList.add('flex');
 
             try {
+                // Sincronización secundaria opcional
                 await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -492,12 +551,14 @@
                         detail
                     })
                 });
-            } catch (e) { console.error("Sheets Sync Error:", e); }
-            
-            setTimeout(() => {
-                indicator.classList.remove('flex');
-                indicator.classList.add('hidden');
-            }, 1000);
+            } catch (e) { 
+                console.error("Sheets Sync Error:", e); 
+            } finally {
+                setTimeout(() => {
+                    indicator.classList.remove('flex');
+                    indicator.classList.add('hidden');
+                }, 1000);
+            }
         };
     </script>
 </body>
