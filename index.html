@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operación Neón - Dashboard de Misión</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Space+Mono', monospace;
+            background-color: #0f051d;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .neon-border-pink { border: 1px solid rgba(236, 72, 153, 0.5); box-shadow: 0 0 15px rgba(236, 72, 153, 0.2); }
+        .neon-border-cyan { border: 1px solid rgba(6, 182, 212, 0.5); box-shadow: 0 0 15px rgba(6, 182, 212, 0.2); }
+        
+        .glass-card {
+            background: rgba(26, 11, 46, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        @keyframes scan {
+            0% { top: 0; opacity: 0; }
+            50% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: rgba(236, 72, 153, 0.3);
+            animation: scan 4s linear infinite;
+            pointer-events: none;
+        }
+
+        .progress-gradient {
+            background: linear-gradient(90deg, #ec4899 0%, #06b6d4 100%);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(236, 72, 153, 0.3); border-radius: 10px; }
+    </style>
+</head>
+<body class="selection:bg-pink-500">
+
+    <!-- Pantalla de Login -->
+    <div id="login-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-[#0f051d] p-4">
+        <div class="max-w-md w-full glass-card p-8 rounded-lg neon-border-cyan text-center">
+            <i data-lucide="shield" class="w-16 h-16 text-cyan-400 mx-auto mb-6 animate-pulse"></i>
+            <h1 class="text-3xl font-bold tracking-widest text-cyan-400 mb-2">OPERACIÓN NEÓN</h1>
+            <p class="text-gray-400 text-xs mb-8 uppercase tracking-widest">Acceso Restringido - Sincronización Sheets</p>
+            
+            <div class="space-y-6 text-left">
+                <div>
+                    <label class="block text-[10px] text-cyan-500 mb-2 uppercase tracking-widest">Nombre de Agente</label>
+                    <input type="text" id="agent-input" placeholder="Introduce tu ID..." 
+                        class="w-full bg-black/50 border border-cyan-500/50 p-3 rounded text-cyan-100 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all">
+                </div>
+                <button onclick="handleLogin()" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 group">
+                    Iniciar Infiltración <i data-lucide="chevron-right" class="group-hover:translate-x-1 transition-transform"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Principal (Oculto por defecto) -->
+    <div id="dashboard" class="hidden min-h-screen p-4 md:p-8 flex flex-col gap-6">
+        
+        <!-- Header -->
+        <header class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-8 flex flex-col gap-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="shield" class="text-pink-500"></i>
+                        <h1 class="text-2xl font-bold tracking-widest text-pink-500 uppercase">Operación Neón</h1>
+                    </div>
+                    <div id="sync-indicator" class="hidden items-center gap-2 text-[10px] text-cyan-400 animate-pulse bg-cyan-400/10 px-3 py-1 rounded-full border border-cyan-400/30">
+                        <i data-lucide="refresh-cw" class="w-3 h-3 animate-spin"></i> SINCRONIZANDO CON SHEETS...
+                    </div>
+                </div>
+                
+                <div class="glass-card border-l-4 border-pink-500 p-6 rounded-r-lg shadow-lg">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-xs uppercase text-pink-500 font-bold">Misión Principal: Registro Bootcamp</span>
+                        <span id="progress-text" class="text-cyan-400 text-sm font-bold">0%</span>
+                    </div>
+                    <div class="w-full h-3 bg-gray-800 rounded-full overflow-hidden border border-white/5">
+                        <div id="progress-bar" class="h-full progress-gradient transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-4 glass-card neon-border-pink p-6 rounded-lg flex flex-col items-center justify-center relative overflow-hidden">
+                <div class="scan-line"></div>
+                <span class="text-xs uppercase text-gray-400 mb-2">Tiempo Restante</span>
+                <div class="flex gap-4 items-baseline">
+                    <div class="text-center"><div id="timer-h" class="text-4xl font-bold text-pink-500">48</div><div class="text-[10px] text-gray-500 uppercase">Hrs</div></div>
+                    <span class="text-3xl text-pink-500 animate-pulse">:</span>
+                    <div class="text-center"><div id="timer-m" class="text-4xl font-bold text-pink-500">30</div><div class="text-[10px] text-gray-500 uppercase">Min</div></div>
+                    <span class="text-3xl text-pink-500 animate-pulse">:</span>
+                    <div class="text-center"><div id="timer-s" class="text-4xl font-bold text-pink-500">15</div><div class="text-[10px] text-gray-500 uppercase">Seg</div></div>
+                </div>
+            </div>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
+            <!-- Sidebar -->
+            <div class="lg:col-span-4 flex flex-col gap-6">
+                <!-- Misiones -->
+                <section class="glass-card p-5 rounded-lg">
+                    <h2 class="text-sm font-bold uppercase text-cyan-400 mb-4 flex items-center gap-2">
+                        <i data-lucide="zap" class="w-4 h-4"></i> Panel de Operaciones
+                    </h2>
+                    <div id="mission-list" class="space-y-3">
+                        <!-- Generado por JS -->
+                    </div>
+                </section>
+
+                <!-- Perfil -->
+                <section class="glass-card p-5 rounded-lg relative overflow-hidden">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 rounded border-2 border-cyan-500 flex items-center justify-center bg-cyan-900/20">
+                            <i data-lucide="user" class="w-10 h-10 text-cyan-400"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs text-cyan-400 uppercase">Agente Activo:</span>
+                            <div id="display-agent-name" class="text-lg font-bold uppercase tracking-wider">---</div>
+                            <div class="flex gap-1 mt-1 text-pink-500">
+                                <i data-lucide="heart" class="w-3 h-3 fill-current"></i>
+                                <i data-lucide="heart" class="w-3 h-3 fill-current"></i>
+                                <i data-lucide="heart" class="w-3 h-3 fill-current"></i>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Insignias -->
+                <section class="glass-card p-5 rounded-lg">
+                    <h2 class="text-sm font-bold uppercase text-cyan-400 mb-4 flex items-center gap-2">
+                        <i data-lucide="trophy" class="w-4 h-4"></i> Inventario
+                    </h2>
+                    <div id="badge-list" class="flex flex-wrap gap-4 justify-center">
+                        <!-- Generado por JS -->
+                    </div>
+                </section>
+            </div>
+
+            <!-- Centro de Misión -->
+            <div class="lg:col-span-8 flex flex-col gap-6">
+                <div class="glass-card rounded-lg flex flex-col h-full overflow-hidden min-h-[500px]">
+                    <div class="bg-black/60 p-4 border-b border-white/10 flex justify-between items-center text-[10px] uppercase font-bold text-pink-500 tracking-widest">
+                        <span class="flex items-center gap-2"><i data-lucide="message-square" class="w-3 h-3"></i> Terminal de Operación</span>
+                        <span class="text-cyan-400 flex items-center gap-2"><i data-lucide="table" class="w-3 h-3"></i> Sheets Sync: ON</span>
+                    </div>
+
+                    <!-- Contenido Dinámico Misión -->
+                    <div id="mission-content" class="flex-grow p-6 overflow-y-auto">
+                        <div class="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-40">
+                            <i data-lucide="zap" class="w-12 h-12 text-cyan-400 animate-pulse"></i>
+                            <p class="text-xs uppercase tracking-[0.2em]">Inicia una misión para desplegar la interfaz</p>
+                        </div>
+                    </div>
+
+                    <!-- Chat Feed -->
+                    <div id="chat-feed" class="bg-black/40 border-t border-white/10 p-4 h-48 overflow-y-auto flex flex-col gap-3">
+                        <span class="text-[10px] uppercase text-gray-500 sticky top-0 bg-black/40 w-full pb-2 tracking-[0.2em]">Canal de Inteligencia Colectiva</span>
+                        <div id="chat-messages" class="flex flex-col gap-3">
+                            <!-- Mensajes aquí -->
+                        </div>
+                    </div>
+
+                    <!-- Input Bar -->
+                    <div class="p-4 bg-black/60 border-t border-white/10 flex gap-3">
+                        <input type="text" id="chat-input" placeholder="Escribe un mensaje para el equipo..."
+                            class="flex-grow bg-black/40 border border-white/10 rounded px-4 text-xs focus:outline-none focus:border-cyan-500 transition-colors">
+                        <button onclick="sendComment()" class="bg-cyan-500 hover:bg-cyan-400 px-6 py-2 rounded text-xs font-bold uppercase flex items-center gap-2 transition-all active:scale-95 shadow-[0_0_10px_rgba(6,182,212,0.3)]">
+                            Enviar <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="text-[9px] text-center text-gray-600 uppercase tracking-[0.3em] pt-4 border-t border-white/5 flex justify-between px-4">
+            <span id="agent-footer-id">Agente ID: ---</span>
+            <div class="flex gap-4">
+                <span class="text-green-500/50">GITHUB REPOSITORY ACTIVE</span>
+                <span class="text-pink-500/30">Protocolo Neón v3.2</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- CONFIGURACIÓN ---
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzakYGVzX-dgOK_wNrBEmDbSbh7zO2UAjP0LNMG0TpSRJPJAHUZv-DsEsK_-sHhSZBRlQ/exec";
+        
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'operacion-neon-bootcamp';
+
+        // Estado Global
+        let state = {
+            agentName: '',
+            userId: null,
+            progress: 0,
+            completedMissions: [],
+            timeLeft: 174615,
+            currentMissionId: null,
+            randomReto: ""
+        };
+
+        const missions = [
+            { id: 1, title: 'INFILTRARSE EN LA RED', reward: '50 Puntos + 1 Vida', badge: 'Agente Adaptativo' },
+            { id: 2, title: 'DESCRIPTAR EL MENSAJE', reward: '100 Puntos', badge: 'Agente Comunicador' },
+            { id: 3, title: 'DISTRACCIÓN DEL OBJETIVO', reward: '75 Puntos', badge: 'Agente Colaborativo' },
+        ];
+
+        const miniRetos = [
+            "Explica cómo es un equipo ágil… sin palabras",
+            "Muestra un proyecto en caos sin escribir nada",
+            "Representa un cliente frustrado",
+            "Explica qué es colaborar",
+            "Explica tu trabajo diario… sin usar texto"
+        ];
+
+        // --- LÓGICA DE NEGOCIO ---
+
+        window.handleLogin = async () => {
+            const name = document.getElementById('agent-input').value.trim();
+            if (!name) return;
+
+            state.agentName = name;
+            
+            // Firebase Auth
+            await signInAnonymously(auth);
+            
+            // Check existing user
+            const agentRef = doc(db, 'artifacts', appId, 'public', 'data', 'agents', auth.currentUser.uid);
+            const agentSnap = await getDoc(agentRef);
+
+            if (agentSnap.exists()) {
+                const data = agentSnap.data();
+                state.completedMissions = data.completedMissions || [];
+                state.progress = data.progress || 0;
+                state.agentName = data.name;
+            } else {
+                await setDoc(agentRef, {
+                    name: state.agentName,
+                    completedMissions: [],
+                    progress: 0,
+                    createdAt: serverTimestamp()
+                });
+                await syncToSheets("Acceso de Agente", "Registro inicial de misión");
+            }
+
+            state.userId = auth.currentUser.uid;
+            document.getElementById('login-overlay').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            
+            initDashboard();
+            startListeners();
+        };
+
+        const initDashboard = () => {
+            document.getElementById('display-agent-name').innerText = state.agentName;
+            document.getElementById('agent-footer-id').innerText = `Agente ID: ${state.userId}`;
+            renderMissions();
+            renderBadges();
+            updateProgress();
+            lucide.createIcons();
+        };
+
+        const startListeners = () => {
+            // Timer
+            setInterval(() => {
+                state.timeLeft--;
+                const h = Math.floor(state.timeLeft / 3600);
+                const m = Math.floor((state.timeLeft % 3600) / 60);
+                const s = state.timeLeft % 60;
+                document.getElementById('timer-h').innerText = String(h).padStart(2, '0');
+                document.getElementById('timer-m').innerText = String(m).padStart(2, '0');
+                document.getElementById('timer-s').innerText = String(s).padStart(2, '0');
+            }, 1000);
+
+            // Firestore Comments
+            const q = collection(db, 'artifacts', appId, 'public', 'data', 'comments');
+            onSnapshot(q, (snapshot) => {
+                const messages = snapshot.docs.map(doc => doc.data());
+                messages.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                renderChat(messages);
+            });
+        };
+
+        const renderMissions = () => {
+            const list = document.getElementById('mission-list');
+            list.innerHTML = missions.map(m => {
+                const isComplete = state.completedMissions.includes(m.id);
+                const isActive = state.currentMissionId === m.id;
+                
+                return `
+                    <button onclick="window.setMission(${m.id})" ${isComplete ? 'disabled' : ''} 
+                        class="w-full text-left p-3 rounded border transition-all flex items-center justify-between group 
+                        ${isComplete ? 'bg-emerald-950/30 border-emerald-500/50 text-emerald-400' : 
+                          isActive ? 'bg-pink-900/20 border-pink-500 text-pink-100' : 
+                          'bg-black/20 border-white/5 hover:border-pink-500/50 text-gray-400'}">
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold">${m.id}. ${m.title}</span>
+                            <span class="text-[9px] opacity-60">${m.reward}</span>
+                        </div>
+                        <i data-lucide="${isComplete ? 'check-circle' : 'lock'}" class="w-4 h-4 ${isComplete ? '' : 'opacity-40'}"></i>
+                    </button>
+                `;
+            }).join('');
+            lucide.createIcons();
+        };
+
+        const renderBadges = () => {
+            const list = document.getElementById('badge-list');
+            list.innerHTML = missions.map(m => {
+                const isComplete = state.completedMissions.includes(m.id);
+                return `
+                    <div class="flex flex-col items-center gap-1 transition-all ${isComplete ? 'opacity-100' : 'opacity-10 grayscale'}">
+                        <div class="w-12 h-12 rounded-full border-2 border-pink-500 flex items-center justify-center bg-pink-500/10">
+                            <i data-lucide="shield" class="w-6 h-6 text-pink-500"></i>
+                        </div>
+                        <span class="text-[8px] text-center w-16 uppercase leading-tight">${m.badge}</span>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        };
+
+        const updateProgress = () => {
+            const percent = Math.round((state.completedMissions.length / missions.length) * 100);
+            state.progress = percent;
+            document.getElementById('progress-text').innerText = `${percent}%`;
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+        };
+
+        window.setMission = (id) => {
+            state.currentMissionId = id;
+            const container = document.getElementById('mission-content');
+            
+            if (id === 1) {
+                state.randomReto = miniRetos[Math.floor(Math.random() * miniRetos.length)];
+                container.innerHTML = `
+                    <div class="space-y-6 animate-in fade-in duration-500">
+                        <div class="bg-cyan-900/10 border border-cyan-500/30 p-4 rounded text-center">
+                            <h3 class="text-cyan-400 font-bold mb-2 uppercase text-xs">Reto Visual No Verbal</h3>
+                            <p class="text-xl italic text-white">"${state.randomReto}"</p>
+                        </div>
+                        <textarea id="m1-data" placeholder="Pega tus Emojis aquí..." class="w-full bg-black/40 border border-white/10 rounded-lg p-4 text-3xl focus:ring-0 resize-none h-32"></textarea>
+                        <button onclick="window.completeMission(1)" class="w-full bg-pink-600 hover:bg-pink-500 py-4 rounded uppercase font-bold">Transmitir Evidencia</button>
+                    </div>
+                `;
+            } else if (id === 2) {
+                container.innerHTML = `
+                    <div class="space-y-6">
+                        <h3 class="text-pink-500 font-bold uppercase text-xs tracking-widest">Inteligencia de Video</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <iframe class="w-full aspect-video rounded border border-white/10" src="https://www.youtube.com/embed/l0hVIH3EnlQ"></iframe>
+                            <iframe class="w-full aspect-video rounded border border-white/10" src="https://www.youtube.com/embed/x02iTy9bBQs"></iframe>
+                        </div>
+                        <textarea id="m2-data" class="w-full bg-black/40 border border-white/10 p-4 rounded text-sm" placeholder="Análisis táctico..."></textarea>
+                        <button onclick="window.completeMission(2)" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded uppercase font-bold">Enviar Reporte</button>
+                    </div>
+                `;
+            } else if (id === 3) {
+                container.innerHTML = `
+                    <div class="space-y-6 text-center">
+                        <div class="bg-cyan-900/10 border border-cyan-500/30 p-6 rounded-lg">
+                            <h3 class="text-cyan-400 font-bold mb-4 uppercase text-xs">Verdad Universal</h3>
+                            <p class="text-lg text-white mb-6">"Escribe algo que todos saben… pero nadie aplica."</p>
+                            <textarea id="m3-data" class="w-full bg-black/60 border border-cyan-500/50 p-4 rounded text-cyan-100" placeholder="Aporta tu sabiduría..."></textarea>
+                        </div>
+                        <button onclick="window.completeMission(3)" class="w-full bg-gradient-to-r from-pink-600 to-cyan-600 py-5 rounded-lg uppercase font-black">Finalizar Operación</button>
+                    </div>
+                `;
+            }
+            renderMissions();
+        };
+
+        window.completeMission = async (id) => {
+            const detailElement = document.getElementById(`m${id}-data`);
+            const detail = detailElement ? detailElement.value : "";
+            
+            state.completedMissions.push(id);
+            state.currentMissionId = null;
+            
+            const agentRef = doc(db, 'artifacts', appId, 'public', 'data', 'agents', state.userId);
+            await updateDoc(agentRef, {
+                completedMissions: state.completedMissions,
+                progress: Math.round((state.completedMissions.length / missions.length) * 100),
+                lastUpdate: serverTimestamp()
+            });
+
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'comments'), {
+                user: state.agentName,
+                text: `¡Misión ${id} completada exitosamente!`,
+                type: 'system',
+                timestamp: serverTimestamp()
+            });
+
+            await syncToSheets(`Misión ${id} completada`, detail);
+            
+            initDashboard();
+            
+            if (state.completedMissions.length === 3) {
+                document.getElementById('mission-content').innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-center space-y-6">
+                        <i data-lucide="trophy" class="w-20 h-20 text-yellow-400 animate-bounce"></i>
+                        <h3 class="text-3xl font-bold uppercase tracking-widest">¡Extracción Completa!</h3>
+                        <p class="text-cyan-400 font-bold uppercase tracking-widest">🎖️ Agente certificado para el bootcamp 🎖️</p>
+                    </div>
+                `;
+                lucide.createIcons();
+            } else {
+                document.getElementById('mission-content').innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-40">
+                        <i data-lucide="zap" class="w-12 h-12 text-cyan-400 animate-pulse"></i>
+                        <p class="text-xs uppercase tracking-[0.2em]">Selecciona el siguiente objetivo</p>
+                    </div>
+                `;
+                lucide.createIcons();
+            }
+        };
+
+        const renderChat = (messages) => {
+            const feed = document.getElementById('chat-messages');
+            feed.innerHTML = messages.map(c => `
+                <div class="flex gap-3 items-start animate-in fade-in">
+                    <div class="w-8 h-8 rounded flex-shrink-0 flex items-center justify-center ${c.type === 'system' ? 'bg-cyan-500/20' : 'bg-pink-500/20'}">
+                       <i data-lucide="user" class="w-4 h-4 ${c.type === 'system' ? 'text-cyan-500' : 'text-pink-500'}"></i>
+                    </div>
+                    <div class="bg-white/5 p-3 rounded-lg flex-grow border border-white/5">
+                       <div class="flex justify-between items-center mb-1">
+                          <span class="text-[10px] font-bold text-cyan-400 uppercase tracking-wider">${c.user}</span>
+                          <span class="text-[8px] text-gray-600">${c.timestamp?.seconds ? new Date(c.timestamp.seconds * 1000).toLocaleTimeString() : '...'}</span>
+                       </div>
+                       <p class="text-[11px] leading-relaxed ${c.type === 'system' ? 'text-cyan-200/70 italic' : 'text-gray-300'}">${c.text}</p>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        };
+
+        window.sendComment = async () => {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            input.value = '';
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'comments'), {
+                user: state.agentName,
+                text: text,
+                type: 'text',
+                timestamp: serverTimestamp()
+            });
+            await syncToSheets("Nuevo comentario", text);
+        };
+
+        const syncToSheets = async (action, detail = "") => {
+            const indicator = document.getElementById('sync-indicator');
+            indicator.classList.remove('hidden');
+            indicator.classList.add('flex');
+
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({
+                        agentName: state.agentName,
+                        action,
+                        progress: state.progress,
+                        completedMissions: state.completedMissions,
+                        detail
+                    })
+                });
+            } catch (e) { console.error("Sheets Sync Error:", e); }
+            
+            setTimeout(() => {
+                indicator.classList.remove('flex');
+                indicator.classList.add('hidden');
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
