@@ -46,32 +46,41 @@
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
         ::-webkit-scrollbar-thumb { background: rgba(236, 72, 153, 0.3); border-radius: 10px; }
+
+        .file-drop-zone {
+            border: 2px dashed rgba(6, 182, 212, 0.3);
+            transition: all 0.3s ease;
+        }
+        .file-drop-zone:hover {
+            border-color: #ec4899;
+            background: rgba(236, 72, 153, 0.05);
+        }
     </style>
 </head>
 <body class="selection:bg-pink-500">
 
-    <!-- Acceso por Alias (Solo Google Sheets) -->
+    <!-- Login Overlay -->
     <div id="login-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-[#0f051d] p-4">
         <div class="max-w-md w-full glass-card p-8 rounded-lg neon-border-cyan text-center">
             <i data-lucide="shield" class="w-16 h-16 text-cyan-400 mx-auto mb-6 animate-pulse"></i>
             <h1 class="text-3xl font-bold tracking-widest text-cyan-400 mb-2 uppercase">OPERACIÓN NEÓN</h1>
-            <p id="status-text" class="text-gray-400 text-[10px] mb-8 uppercase tracking-widest">Protocolo de Acceso Directo a Hoja de Cálculo</p>
+            <p id="status-text" class="text-gray-400 text-[10px] mb-8 uppercase tracking-widest text-balance">Conectado a Sistema Central de Google Sheets</p>
             
-            <div id="login-form" class="space-y-6 text-left">
+            <div class="space-y-6 text-left">
                 <div>
-                    <label class="block text-[10px] text-cyan-500 mb-2 uppercase tracking-widest">Tu Alias de Agente</label>
-                    <input type="text" id="agent-input" placeholder="Introduce tu alias secreto..." 
+                    <label class="block text-[10px] text-cyan-500 mb-2 uppercase tracking-widest font-bold">Alias del Agente</label>
+                    <input type="text" id="agent-input" placeholder="Ingresa tu alias registrado..." 
                         class="w-full bg-black/50 border border-cyan-500/50 p-3 rounded text-cyan-100 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all outline-none">
                 </div>
                 <button id="login-btn" onclick="window.handleLogin()" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 group">
-                    Validar en Base de Datos <i data-lucide="chevron-right" class="group-hover:translate-x-1 transition-transform"></i>
+                    Verificar Alias <i data-lucide="chevron-right" class="group-hover:translate-x-1 transition-transform"></i>
                 </button>
-                <div id="login-error" class="hidden text-red-500 text-[10px] text-center uppercase mt-2 italic">Fallo de Validación: Alias no encontrado en Sheets.</div>
+                <div id="login-error" class="hidden text-red-500 text-[10px] text-center uppercase mt-2 italic font-bold">Alias no encontrado en la base de datos.</div>
             </div>
         </div>
     </div>
 
-    <!-- Dashboard Principal -->
+    <!-- Dashboard -->
     <div id="dashboard" class="hidden min-h-screen p-4 md:p-8 flex flex-col gap-6">
         <header class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div class="lg:col-span-8 flex flex-col gap-4">
@@ -81,13 +90,13 @@
                         <h1 class="text-2xl font-bold tracking-widest text-pink-500 uppercase">Operación Neón</h1>
                     </div>
                     <div id="sync-indicator" class="hidden items-center gap-2 text-[10px] text-cyan-400 animate-pulse bg-cyan-400/10 px-3 py-1 rounded-full border border-cyan-400/30">
-                        <i data-lucide="refresh-cw" class="w-3 h-3 animate-spin"></i> TRANSMITIENDO A GOOGLE SHEETS...
+                        <i data-lucide="refresh-cw" class="w-3 h-3 animate-spin"></i> SINCRONIZANDO SHEETS...
                     </div>
                 </div>
                 
                 <div class="glass-card border-l-4 border-pink-500 p-6 rounded-r-lg shadow-lg">
                     <div class="flex justify-between items-center mb-4">
-                        <span class="text-xs uppercase text-pink-500 font-bold tracking-widest">Estado de Misión en Tiempo Real</span>
+                        <span class="text-xs uppercase text-pink-500 font-bold tracking-widest">Progreso de la Operación</span>
                         <span id="progress-text" class="text-cyan-400 text-sm font-bold">0%</span>
                     </div>
                     <div class="w-full h-3 bg-gray-800 rounded-full overflow-hidden border border-white/5">
@@ -110,18 +119,18 @@
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
-            <!-- Sidebar -->
+            <!-- Left Side -->
             <div class="lg:col-span-4 flex flex-col gap-6">
                 <section class="glass-card p-5 rounded-lg">
                     <h2 class="text-sm font-bold uppercase text-cyan-400 mb-4 flex items-center gap-2">
-                        <i data-lucide="zap" class="w-4 h-4"></i> Objetivos del Agente
+                        <i data-lucide="zap" class="w-4 h-4"></i> Objetivos Tácticos
                     </h2>
                     <div id="mission-list" class="space-y-3"></div>
                 </section>
 
                 <section class="glass-card p-5 rounded-lg relative overflow-hidden">
                     <div class="flex items-center gap-4">
-                        <div id="agent-image-container" class="w-16 h-16 rounded border-2 border-cyan-500 flex items-center justify-center bg-cyan-900/20 overflow-hidden">
+                        <div id="agent-photo-container" class="w-16 h-16 rounded border-2 border-cyan-500 flex items-center justify-center bg-cyan-900/20 overflow-hidden shadow-[0_0_10px_rgba(6,182,212,0.3)]">
                             <i data-lucide="user" id="agent-icon-placeholder" class="w-10 h-10 text-cyan-400"></i>
                         </div>
                         <div>
@@ -144,29 +153,31 @@
                 </section>
             </div>
 
+            <!-- Terminal Side -->
             <div class="lg:col-span-8 flex flex-col gap-6">
                 <div class="glass-card rounded-lg flex flex-col h-full overflow-hidden min-h-[500px]">
                     <div class="bg-black/60 p-4 border-b border-white/10 flex justify-between items-center text-[10px] uppercase font-bold text-pink-500 tracking-widest">
-                        <span class="flex items-center gap-2"><i data-lucide="message-square" class="w-3 h-3"></i> Interfaz de Datos</span>
-                        <span class="text-cyan-400 flex items-center gap-2"><i data-lucide="table" class="w-3 h-3"></i> Solo Google Sheets</span>
+                        <span class="flex items-center gap-2"><i data-lucide="message-square" class="w-3 h-3"></i> Interfaz de Datos Central</span>
+                        <span class="text-cyan-400 flex items-center gap-2"><i data-lucide="table" class="w-3 h-3"></i> Google Sheets Activo</span>
                     </div>
 
                     <div id="mission-content" class="flex-grow p-6 overflow-y-auto">
                         <div class="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-40">
                             <i data-lucide="zap" class="w-12 h-12 text-cyan-400 animate-pulse"></i>
-                            <p class="text-xs uppercase tracking-[0.2em]">Inicia una operación para desplegar interfaz</p>
+                            <p class="text-xs uppercase tracking-[0.2em]">Inicia una misión en el panel lateral</p>
                         </div>
                     </div>
 
+                    <!-- Bitácora -->
                     <div id="chat-feed" class="bg-black/40 border-t border-white/10 p-4 h-48 overflow-y-auto flex flex-col gap-3">
-                        <span class="text-[10px] uppercase text-gray-500 sticky top-0 bg-black/40 w-full pb-2 tracking-[0.2em]">Logs de Actividad (Reciente)</span>
-                        <div id="chat-messages" class="flex flex-col gap-3 text-[11px] text-gray-400 italic">
-                            No hay actividad reciente registrada en la red.
+                        <span class="text-[10px] uppercase text-gray-500 sticky top-0 bg-black/40 w-full pb-2 tracking-[0.2em]">Bitácora de Sesión (Enviado a Sheets)</span>
+                        <div id="local-logs" class="flex flex-col gap-2 text-[10px]">
+                            <div class="text-gray-600 italic">Esperando actividad de agente...</div>
                         </div>
                     </div>
 
                     <div class="p-4 bg-black/60 border-t border-white/10 flex gap-3">
-                        <input type="text" id="chat-input" placeholder="Registrar comentario en la hoja central..."
+                        <input type="text" id="comment-input" placeholder="Añadir comentario a la hoja de cálculo..."
                             class="flex-grow bg-black/40 border border-white/10 rounded px-4 text-xs focus:outline-none focus:border-cyan-500 transition-colors outline-none">
                         <button id="send-btn" onclick="window.sendComment()" class="bg-cyan-500 hover:bg-cyan-400 px-6 py-2 rounded text-xs font-bold uppercase flex items-center gap-2 transition-all active:scale-95 shadow-[0_0_10px_rgba(6,182,212,0.3)]">
                             Registrar <i data-lucide="send" class="w-3.5 h-3.5"></i>
@@ -177,16 +188,16 @@
         </main>
 
         <footer class="text-[9px] text-center text-gray-600 uppercase tracking-[0.3em] pt-4 border-t border-white/5 flex justify-between px-4">
-            <span id="agent-footer-id">---</span>
+            <span id="agent-footer-id">Alias: ---</span>
             <div class="flex gap-4">
-                <span class="text-green-500/50 uppercase">Conexión Segura vía Apps Script</span>
-                <span class="text-pink-500/30">Protocolo Neón v5.0</span>
+                <span class="text-green-500/50 uppercase">Cloud Sync: Enabled</span>
+                <span class="text-pink-500/30">Versión 7.0 (Multimedia Ready)</span>
             </div>
         </footer>
     </div>
 
     <script>
-        // --- CONFIGURACIÓN DE ACCESO ---
+        // --- CONFIGURACIÓN CRÍTICA ---
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzakYGVzX-dgOK_wNrBEmDbSbh7zO2UAjP0LNMG0TpSRJPJAHUZv-DsEsK_-sHhSZBRlQ/exec";
         
         const missions = [
@@ -202,26 +213,26 @@
             progress: 0,
             completedMissions: [],
             timeLeft: 174615,
-            isAuthenticated: false
+            isAuthenticated: false,
+            tempBase64: ""
         };
 
-        // --- SISTEMA DE COMUNICACIÓN CON SHEETS ---
+        // --- SISTEMA DE COMUNICACIÓN ---
         const callSheets = async (payload) => {
             const indicator = document.getElementById('sync-indicator');
             if (indicator) indicator.classList.remove('hidden');
             
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(payload)
-                });
-                
-                // Si la acción no es 'no-cors', intentamos leer el JSON
                 if (payload.action === "validateAlias") {
+                    const response = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    });
                     return await response.json();
                 }
 
-                // Para acciones de log, usamos no-cors para evitar problemas de redirect de Google
                 await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -235,14 +246,14 @@
                 
                 return { result: "success" };
             } catch (e) {
-                console.error("Sheets Communication Error:", e);
+                console.error("Sheets Link Error:", e);
                 return { result: "error" };
             } finally {
                 if (indicator) setTimeout(() => indicator.classList.add('hidden'), 1000);
             }
         };
 
-        // --- MANEJO DE ACCESO ---
+        // --- MANEJADORES GLOBALES ---
         window.handleLogin = async () => {
             const loginBtn = document.getElementById('login-btn');
             const aliasInput = document.getElementById('agent-input');
@@ -252,75 +263,96 @@
             if (!alias) return;
 
             loginBtn.disabled = true;
-            loginBtn.innerText = "VALIDANDO ALIAS...";
+            loginBtn.innerText = "ACCEDIENDO A LA RED...";
             errorMsg.classList.add('hidden');
 
-            const result = await callSheets({ action: "validateAlias", alias: alias });
+            try {
+                const result = await callSheets({ action: "validateAlias", alias: alias });
 
-            if (result && result.result === "success") {
-                state.agentName = result.agente;
-                state.agentAlias = alias;
-                state.agentPhoto = result.foto || "";
-                state.isAuthenticated = true;
+                if (result && result.result === "success") {
+                    state.agentName = result.agente;
+                    state.agentAlias = alias;
+                    state.agentPhoto = result.foto || "";
+                    state.isAuthenticated = true;
 
-                // Transición al Dashboard
-                document.getElementById('login-overlay').classList.add('hidden');
-                document.getElementById('dashboard').classList.remove('hidden');
-                
-                initDashboard();
-                // Notificar acceso
-                await callSheets({ action: "Ingreso al Sistema", detail: "Alias validado correctamente" });
-            } else {
+                    document.getElementById('login-overlay').classList.add('hidden');
+                    document.getElementById('dashboard').classList.remove('hidden');
+                    
+                    initDashboard();
+                    await callSheets({ action: "Acceso Confirmado", detail: "Inicio de sesión multimedia exitoso" });
+                } else {
+                    throw new Error("Alias Inválido");
+                }
+            } catch (e) {
                 loginBtn.disabled = false;
-                loginBtn.innerText = "REINTENTAR VALIDACIÓN";
+                loginBtn.innerText = "REINTENTAR ACCESO";
                 errorMsg.classList.remove('hidden');
             }
         };
 
-        const initDashboard = () => {
-            document.getElementById('display-agent-name').innerText = state.agentName;
-            document.getElementById('agent-footer-id').innerText = `ALIAS: ${state.agentAlias}`;
-            
-            if (state.agentPhoto) {
-                document.getElementById('agent-image-container').innerHTML = `
-                    <img src="${state.agentPhoto}" class="w-full h-full object-cover" 
-                    onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=${state.agentAlias}'">`;
-            }
+        // Función para procesar archivos de imagen
+        window.handleFileSelect = (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
 
-            renderMissions();
-            renderBadges();
-            updateProgressUI();
-            startTimer();
-            lucide.createIcons();
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                state.tempBase64 = e.target.result;
+                const preview = document.getElementById('m1-preview');
+                preview.src = state.tempBase64;
+                preview.classList.remove('hidden');
+                document.getElementById('m1-placeholder').classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
         };
 
-        // --- LÓGICA DE MISIONES ---
         window.setMission = (id) => {
-            const container = document.getElementById('mission-content');
             if (state.completedMissions.includes(id)) return;
-
+            const container = document.getElementById('mission-content');
+            state.tempBase64 = ""; // Reset de archivo temporal
+            
             if (id === 1) {
                 container.innerHTML = `
-                    <div class="space-y-4 animate-in fade-in">
+                    <div class="space-y-6 animate-in fade-in">
                         <div class="bg-cyan-900/10 border border-cyan-500/30 p-4 rounded text-center">
-                            <h3 class="text-cyan-400 font-bold uppercase text-xs">Reto Visual (Sheets)</h3>
-                            <p class="text-xl italic">"Explica qué es colaborar sin usar palabras"</p>
+                            <h3 class="text-cyan-400 font-bold uppercase text-xs">Misión Visual: Comunicación No Verbal</h3>
+                            <p class="text-sm italic text-white mb-2">"Representa qué es COLABORAR sin usar palabras"</p>
                         </div>
-                        <textarea id="m1-data" placeholder="Pega emojis o describe tu idea aquí..." 
-                            class="w-full bg-black/40 border border-white/10 rounded-lg p-4 text-3xl h-32 focus:ring-1 focus:ring-cyan-500 outline-none"></textarea>
-                        <button onclick="window.completeMission(1)" class="w-full bg-pink-600 hover:bg-pink-500 py-4 rounded uppercase font-bold transition-all shadow-lg shadow-pink-500/20">Enviar a Hoja de Cálculo</button>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Drop Zone / Upload -->
+                            <div class="file-drop-zone relative h-48 rounded-lg flex flex-col items-center justify-center cursor-pointer overflow-hidden group" 
+                                 onclick="document.getElementById('m1-file').click()">
+                                <input type="file" id="m1-file" accept="image/*" class="hidden" onchange="window.handleFileSelect(event)">
+                                <div id="m1-placeholder" class="text-center p-4">
+                                    <i data-lucide="image-plus" class="w-10 h-10 text-cyan-500 mx-auto mb-2 group-hover:text-pink-500 transition-colors"></i>
+                                    <p class="text-[10px] uppercase text-gray-500">Haz clic para adjuntar pieza visual</p>
+                                    <p class="text-[8px] text-gray-600 mt-1">(JPG, PNG o GIF)</p>
+                                </div>
+                                <img id="m1-preview" class="absolute inset-0 w-full h-full object-contain hidden bg-black/40">
+                            </div>
+
+                            <!-- Text/Emoji Area -->
+                            <div class="space-y-2">
+                                <label class="text-[9px] uppercase text-gray-500 font-bold">Comentario / Emojis de apoyo:</label>
+                                <textarea id="m1-data" placeholder="Opcional: añade emojis aquí..." 
+                                    class="w-full bg-black/40 border border-white/10 rounded-lg p-4 text-2xl h-[130px] focus:ring-1 focus:ring-cyan-500 outline-none resize-none"></textarea>
+                            </div>
+                        </div>
+
+                        <button onclick="window.completeMission(1)" class="w-full bg-pink-600 hover:bg-pink-500 py-4 rounded uppercase font-bold transition-all shadow-lg shadow-pink-500/20">Transmitir Pieza Visual a Sheets</button>
                     </div>
                 `;
             } else if (id === 2) {
                 container.innerHTML = `
-                    <div class="space-y-4">
-                        <h3 class="text-pink-500 font-bold uppercase text-xs">Inteligencia Audiovisual</h3>
+                    <div class="space-y-4 animate-in fade-in">
+                        <h3 class="text-pink-500 font-bold uppercase text-xs">Inteligencia de Video</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <iframe class="w-full aspect-video rounded border border-white/10" src="https://www.youtube.com/embed/l0hVIH3EnlQ"></iframe>
-                            <iframe class="w-full aspect-video rounded border border-white/10" src="https://www.youtube.com/embed/x02iTy9bBQs"></iframe>
+                            <iframe class="w-full aspect-video rounded border border-white/10 shadow-lg" src="https://www.youtube.com/embed/l0hVIH3EnlQ"></iframe>
+                            <iframe class="w-full aspect-video rounded border border-white/10 shadow-lg" src="https://www.youtube.com/embed/x02iTy9bBQs"></iframe>
                         </div>
-                        <textarea id="m2-data" class="w-full bg-black/40 border border-white/10 p-4 rounded text-sm h-24 outline-none" placeholder="¿Qué aprendiste de estos vídeos?"></textarea>
-                        <button onclick="window.completeMission(2)" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded uppercase font-bold shadow-lg shadow-cyan-500/20">Transmitir Reporte</button>
+                        <textarea id="m2-data" class="w-full bg-black/40 border border-white/10 p-4 rounded text-sm h-24 outline-none focus:border-pink-500" placeholder="Escribe tu análisis..."></textarea>
+                        <button onclick="window.completeMission(2)" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded uppercase font-bold shadow-lg shadow-cyan-500/20">Enviar Inteligencia</button>
                     </div>
                 `;
             } else if (id === 3) {
@@ -328,9 +360,9 @@
                     <div class="space-y-4 text-center animate-in zoom-in-95">
                         <div class="bg-cyan-900/10 border border-white/10 p-6 rounded-lg">
                             <p class="text-lg text-white mb-6">"Escribe algo que todos saben… pero nadie aplica."</p>
-                            <textarea id="m3-data" class="w-full bg-black/60 border border-cyan-500/30 p-4 rounded text-cyan-100 h-32 outline-none" placeholder="Tu verdad universal..."></textarea>
+                            <textarea id="m3-data" class="w-full bg-black/60 border border-cyan-500/30 p-4 rounded text-cyan-100 h-32 outline-none focus:ring-1 focus:ring-cyan-400" placeholder="Tu verdad universal..."></textarea>
                         </div>
-                        <button onclick="window.completeMission(3)" class="w-full bg-gradient-to-r from-pink-600 to-cyan-600 py-5 rounded-lg uppercase font-black tracking-widest transition-all">Finalizar Bootcamp</button>
+                        <button onclick="window.completeMission(3)" class="w-full bg-gradient-to-r from-pink-600 to-cyan-600 py-5 rounded-lg uppercase font-black tracking-widest shadow-xl">Finalizar Operación</button>
                     </div>
                 `;
             }
@@ -340,38 +372,48 @@
 
         window.completeMission = async (id) => {
             const dataInput = document.getElementById(`m${id}-data`);
-            const detail = dataInput ? dataInput.value : "";
+            let detail = dataInput ? dataInput.value : "";
             
+            // Si es la misión 1 y hay una imagen, adjuntamos el Base64 (resumido o completo)
+            if (id === 1 && state.tempBase64) {
+                detail = `[IMAGEN ADJUNTA] | Emojis: ${detail} | Data: ${state.tempBase64.substring(0, 100)}...`;
+                // Nota: Google Sheets tiene límite de caracteres por celda (50k). 
+                // Enviamos el aviso y el inicio del base64 para que el facilitador sepa que se envió algo.
+            }
+
             if (!state.completedMissions.includes(id)) {
                 state.completedMissions.push(id);
             }
             
             state.progress = Math.round((state.completedMissions.length / missions.length) * 100);
             
-            // Actualizar UI
             updateProgressUI();
             renderMissions();
             renderBadges();
             
-            // Log en Sheets
-            await callSheets({ action: `Misión ${id} completada`, detail: detail });
+            // Enviar a Google Sheets
+            // Pasamos el base64 completo en el payload de red, el Apps Script decidirá si guardarlo o no
+            await callSheets({ 
+                action: `Misión ${id} completada`, 
+                detail: detail,
+                mediaData: (id === 1) ? state.tempBase64 : "" 
+            });
             
-            // Notificar en "chat" local
-            updateLocalChat(`¡Misión ${id} sincronizada en la hoja central!`);
+            addLog(`Misión ${id} (con multimedia) sincronizada.`);
 
             if (state.completedMissions.length === missions.length) {
                 document.getElementById('mission-content').innerHTML = `
                     <div class="h-full flex flex-col items-center justify-center text-center space-y-6">
                         <i data-lucide="trophy" class="w-20 h-20 text-yellow-400 animate-bounce"></i>
-                        <h3 class="text-3xl font-bold uppercase tracking-widest">¡OPERACIÓN EXITOSA!</h3>
-                        <p class="text-cyan-400 font-bold uppercase tracking-widest text-xs">Datos guardados permanentemente en Google Sheets</p>
+                        <h3 class="text-3xl font-bold uppercase tracking-widest">¡PIEZAS RECIBIDAS!</h3>
+                        <p class="text-cyan-400 font-bold uppercase tracking-widest text-xs">Tu evidencia visual ha sido guardada en la base central.</p>
                     </div>
                 `;
             } else {
                 document.getElementById('mission-content').innerHTML = `
                     <div class="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-40">
                         <i data-lucide="zap" class="w-12 h-12 text-cyan-400 animate-pulse"></i>
-                        <p class="text-xs uppercase tracking-[0.2em]">Objetivo completado. Selecciona el siguiente.</p>
+                        <p class="text-xs uppercase tracking-[0.2em]">Objetivo multimedia registrado. Selecciona el siguiente.</p>
                     </div>
                 `;
             }
@@ -379,35 +421,30 @@
         };
 
         window.sendComment = async () => {
-            const input = document.getElementById('chat-input');
+            const input = document.getElementById('comment-input');
             const text = input.value.trim();
             if (!text) return;
 
             input.value = '';
-            await callSheets({ action: "Comentario de Agente", detail: text });
-            updateLocalChat(text);
+            await callSheets({ action: "Comentario Registrado", detail: text });
+            addLog(text);
         };
 
-        // --- UTILIDADES ---
-        const updateProgressUI = () => {
-            document.getElementById('progress-text').innerText = `${state.progress}%`;
-            document.getElementById('progress-bar').style.width = `${state.progress}%`;
-        };
-
-        const updateLocalChat = (msg) => {
-            const feed = document.getElementById('chat-messages');
-            if (feed.innerText.includes("No hay actividad")) feed.innerHTML = "";
+        // --- UI UTILS ---
+        const initDashboard = () => {
+            document.getElementById('display-agent-name').innerText = state.agentName;
+            document.getElementById('agent-footer-id').innerText = `ALIAS: ${state.agentAlias}`;
             
-            const time = new Date().toLocaleTimeString();
-            feed.innerHTML = `
-                <div class="flex flex-col gap-1 border-b border-white/5 pb-2 mb-2 animate-in fade-in">
-                    <div class="flex justify-between items-center">
-                        <span class="text-[9px] font-bold text-cyan-400 uppercase">${state.agentName}</span>
-                        <span class="text-[8px] text-gray-600">${time}</span>
-                    </div>
-                    <p class="text-gray-300 leading-tight">${msg}</p>
-                </div>
-            ` + feed.innerHTML;
+            if (state.agentPhoto) {
+                const imgContainer = document.getElementById('agent-photo-container');
+                imgContainer.innerHTML = `<img src="${state.agentPhoto}" class="w-full h-full object-cover" onerror="this.style.display='none';">`;
+            }
+
+            renderMissions();
+            renderBadges();
+            updateProgressUI();
+            startTimer();
+            lucide.createIcons();
         };
 
         const renderMissions = () => {
@@ -423,7 +460,6 @@
                     </button>
                 `;
             }).join('');
-            lucide.createIcons();
         };
 
         const renderBadges = () => {
@@ -439,7 +475,22 @@
                     </div>
                 `;
             }).join('');
-            lucide.createIcons();
+        };
+
+        const updateProgressUI = () => {
+            document.getElementById('progress-text').innerText = `${state.progress}%`;
+            document.getElementById('progress-bar').style.width = `${state.progress}%`;
+        };
+
+        const addLog = (msg) => {
+            const logContainer = document.getElementById('local-logs');
+            if (logContainer.innerText.includes("Esperando")) logContainer.innerHTML = "";
+            const time = new Date().toLocaleTimeString();
+            logContainer.innerHTML = `
+                <div class="border-l-2 border-cyan-500 pl-2 mb-2 animate-in slide-in-from-left-2 duration-300">
+                    <span class="text-cyan-500 font-bold">[${time}]</span> ${msg}
+                </div>
+            ` + logContainer.innerHTML;
         };
 
         const startTimer = () => {
