@@ -50,23 +50,23 @@
 </head>
 <body class="selection:bg-pink-500">
 
-    <!-- Pantalla de Login -->
+    <!-- Acceso por Alias -->
     <div id="login-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-[#0f051d] p-4">
         <div class="max-w-md w-full glass-card p-8 rounded-lg neon-border-cyan text-center">
             <i data-lucide="shield" class="w-16 h-16 text-cyan-400 mx-auto mb-6 animate-pulse"></i>
-            <h1 class="text-3xl font-bold tracking-widest text-cyan-400 mb-2">OPERACIÓN NEÓN</h1>
-            <p class="text-gray-400 text-xs mb-8 uppercase tracking-widest">Sincronización con Google Sheets Activa</p>
+            <h1 class="text-3xl font-bold tracking-widest text-cyan-400 mb-2 uppercase">Operación Neón</h1>
+            <p id="status-text" class="text-gray-400 text-xs mb-8 uppercase tracking-widest">Validación de Perfil de Agente</p>
             
-            <div class="space-y-6 text-left">
+            <div id="login-form" class="space-y-6 text-left">
                 <div>
-                    <label class="block text-[10px] text-cyan-500 mb-2 uppercase tracking-widest">Identificación de Agente</label>
-                    <input type="text" id="agent-input" placeholder="Nombre clave..." 
+                    <label class="block text-[10px] text-cyan-500 mb-2 uppercase tracking-widest">Alias Secreto</label>
+                    <input type="text" id="agent-input" placeholder="Tu alias de la misión..." 
                         class="w-full bg-black/50 border border-cyan-500/50 p-3 rounded text-cyan-100 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all">
                 </div>
                 <button id="login-btn" onclick="window.handleLogin()" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 group">
-                    Iniciar Infiltración <i data-lucide="chevron-right" class="group-hover:translate-x-1 transition-transform"></i>
+                    Validar Acceso <i data-lucide="chevron-right" class="group-hover:translate-x-1 transition-transform"></i>
                 </button>
-                <div id="login-error" class="hidden text-red-500 text-[10px] text-center uppercase mt-2">Error de conexión. Intente nuevamente.</div>
+                <div id="login-error" class="hidden text-red-500 text-[10px] text-center uppercase mt-2 italic">Error: Agente no reconocido.</div>
             </div>
         </div>
     </div>
@@ -81,13 +81,13 @@
                         <h1 class="text-2xl font-bold tracking-widest text-pink-500 uppercase">Operación Neón</h1>
                     </div>
                     <div id="sync-indicator" class="hidden items-center gap-2 text-[10px] text-cyan-400 animate-pulse bg-cyan-400/10 px-3 py-1 rounded-full border border-cyan-400/30">
-                        <i data-lucide="refresh-cw" class="w-3 h-3 animate-spin"></i> SINCRONIZANDO CON SHEETS...
+                        <i data-lucide="refresh-cw" class="w-3 h-3 animate-spin"></i> SINCRONIZANDO...
                     </div>
                 </div>
                 
                 <div class="glass-card border-l-4 border-pink-500 p-6 rounded-r-lg shadow-lg">
                     <div class="flex justify-between items-center mb-4">
-                        <span class="text-xs uppercase text-pink-500 font-bold tracking-widest">Misión: Registro Bootcamp</span>
+                        <span class="text-xs uppercase text-pink-500 font-bold tracking-widest">Progreso de Operación</span>
                         <span id="progress-text" class="text-cyan-400 text-sm font-bold">0%</span>
                     </div>
                     <div class="w-full h-3 bg-gray-800 rounded-full overflow-hidden border border-white/5">
@@ -98,7 +98,7 @@
 
             <div class="lg:col-span-4 glass-card neon-border-pink p-6 rounded-lg flex flex-col items-center justify-center relative overflow-hidden">
                 <div class="scan-line"></div>
-                <span class="text-xs uppercase text-gray-400 mb-2">Tiempo Restante</span>
+                <span class="text-xs uppercase text-gray-400 mb-2 tracking-tighter">Tiempo para Extracción</span>
                 <div class="flex gap-4 items-baseline">
                     <div class="text-center"><div id="timer-h" class="text-4xl font-bold text-pink-500">48</div><div class="text-[10px] text-gray-500 uppercase">Hrs</div></div>
                     <span class="text-3xl text-pink-500 animate-pulse">:</span>
@@ -114,18 +114,18 @@
             <div class="lg:col-span-4 flex flex-col gap-6">
                 <section class="glass-card p-5 rounded-lg">
                     <h2 class="text-sm font-bold uppercase text-cyan-400 mb-4 flex items-center gap-2">
-                        <i data-lucide="zap" class="w-4 h-4"></i> Panel de Operaciones
+                        <i data-lucide="zap" class="w-4 h-4"></i> Objetivos del Bootcamp
                     </h2>
                     <div id="mission-list" class="space-y-3"></div>
                 </section>
 
                 <section class="glass-card p-5 rounded-lg relative overflow-hidden">
                     <div class="flex items-center gap-4">
-                        <div class="w-16 h-16 rounded border-2 border-cyan-500 flex items-center justify-center bg-cyan-900/20">
-                            <i data-lucide="user" class="w-10 h-10 text-cyan-400"></i>
+                        <div id="agent-image-container" class="w-16 h-16 rounded border-2 border-cyan-500 flex items-center justify-center bg-cyan-900/20 overflow-hidden">
+                            <i data-lucide="user" id="agent-icon-placeholder" class="w-10 h-10 text-cyan-400"></i>
                         </div>
                         <div>
-                            <span class="text-xs text-cyan-400 uppercase">Agente Activo:</span>
+                            <span class="text-xs text-cyan-400 uppercase">Nombre:</span>
                             <div id="display-agent-name" class="text-lg font-bold uppercase tracking-wider">---</div>
                             <div class="flex gap-1 mt-1 text-pink-500">
                                 <i data-lucide="heart" class="w-3 h-3 fill-current"></i>
@@ -138,36 +138,35 @@
 
                 <section class="glass-card p-5 rounded-lg">
                     <h2 class="text-sm font-bold uppercase text-cyan-400 mb-4 flex items-center gap-2">
-                        <i data-lucide="trophy" class="w-4 h-4"></i> Inventario de Insignias
+                        <i data-lucide="trophy" class="w-4 h-4"></i> Insignias
                     </h2>
                     <div id="badge-list" class="flex flex-wrap gap-4 justify-center"></div>
                 </section>
             </div>
 
-            <!-- Terminal de Misión -->
             <div class="lg:col-span-8 flex flex-col gap-6">
                 <div class="glass-card rounded-lg flex flex-col h-full overflow-hidden min-h-[500px]">
                     <div class="bg-black/60 p-4 border-b border-white/10 flex justify-between items-center text-[10px] uppercase font-bold text-pink-500 tracking-widest">
-                        <span class="flex items-center gap-2"><i data-lucide="message-square" class="w-3 h-3"></i> Terminal de Operación</span>
-                        <span class="text-cyan-400 flex items-center gap-2"><i data-lucide="table" class="w-3 h-3"></i> Google Sheets Conectado</span>
+                        <span class="flex items-center gap-2"><i data-lucide="message-square" class="w-3 h-3"></i> Canal Operativo</span>
+                        <span class="text-cyan-400 flex items-center gap-2"><i data-lucide="image" class="w-3 h-3"></i> Perfil Visual Activo</span>
                     </div>
 
                     <div id="mission-content" class="flex-grow p-6 overflow-y-auto">
                         <div class="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-40">
                             <i data-lucide="zap" class="w-12 h-12 text-cyan-400 animate-pulse"></i>
-                            <p class="text-xs uppercase tracking-[0.2em]">Inicia una misión para desplegar la interfaz</p>
+                            <p class="text-xs uppercase tracking-[0.2em]">Seleccione un objetivo táctico</p>
                         </div>
                     </div>
 
                     <div id="chat-feed" class="bg-black/40 border-t border-white/10 p-4 h-48 overflow-y-auto flex flex-col gap-3">
-                        <span class="text-[10px] uppercase text-gray-500 sticky top-0 bg-black/40 w-full pb-2 tracking-[0.2em]">Inteligencia Colectiva</span>
+                        <span class="text-[10px] uppercase text-gray-500 sticky top-0 bg-black/40 w-full pb-2 tracking-[0.2em]">Inteligencia de Campo</span>
                         <div id="chat-messages" class="flex flex-col gap-3"></div>
                     </div>
 
                     <div class="p-4 bg-black/60 border-t border-white/10 flex gap-3">
-                        <input type="text" id="chat-input" placeholder="Escribe un mensaje..."
+                        <input type="text" id="chat-input" placeholder="Enviar mensaje..."
                             class="flex-grow bg-black/40 border border-white/10 rounded px-4 text-xs focus:outline-none focus:border-cyan-500 transition-colors">
-                        <button id="send-btn" onclick="window.sendComment()" class="bg-cyan-500 hover:bg-cyan-400 px-6 py-2 rounded text-xs font-bold uppercase flex items-center gap-2 transition-all active:scale-95 shadow-[0_0_10px_rgba(6,182,212,0.3)]">
+                        <button id="send-btn" onclick="window.sendComment()" class="bg-cyan-500 hover:bg-cyan-400 px-6 py-2 rounded text-xs font-bold uppercase flex items-center gap-2 transition-all active:scale-95">
                             Enviar <i data-lucide="send" class="w-3.5 h-3.5"></i>
                         </button>
                     </div>
@@ -176,10 +175,10 @@
         </main>
 
         <footer class="text-[9px] text-center text-gray-600 uppercase tracking-[0.3em] pt-4 border-t border-white/5 flex justify-between px-4">
-            <span id="agent-footer-id">Agente ID: ---</span>
+            <span id="agent-footer-id">Alias: ---</span>
             <div class="flex gap-4">
-                <span class="text-green-500/50">SHEETS SYNC: ACTIVE</span>
-                <span class="text-pink-500/30">Protocolo Neón v3.5</span>
+                <span class="text-green-500/50 uppercase">Identidad Verificada por Imagen</span>
+                <span class="text-pink-500/30">Protocolo Neón v3.9</span>
             </div>
         </footer>
     </div>
@@ -189,108 +188,183 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIGURACIÓN CENTRAL ---
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzakYGVzX-dgOK_wNrBEmDbSbh7zO2UAjP0LNMG0TpSRJPJAHUZv-DsEsK_-sHhSZBRlQ/exec";
         
-        let firebaseConfig = {};
-        try {
-            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        } catch (e) {
-            console.error("Firebase config injection error:", e);
-        }
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'operacion-neon-bootcamp';
-
-        // Estado Global
-        let state = {
-            agentName: '',
-            userId: null,
-            progress: 0,
-            completedMissions: [],
-            timeLeft: 174615,
-            currentMissionId: null,
-            isAuthenticated: false
-        };
-
         const missions = [
             { id: 1, title: 'INFILTRARSE EN LA RED', reward: '50 Puntos', badge: 'Agente Adaptativo' },
             { id: 2, title: 'DESCRIPTAR EL MENSAJE', reward: '100 Puntos', badge: 'Agente Comunicador' },
             { id: 3, title: 'DISTRACCIÓN DEL OBJETIVO', reward: '75 Puntos', badge: 'Agente Colaborativo' },
         ];
 
-        const miniRetos = [
-            "Explica cómo es un equipo ágil… sin palabras",
-            "Muestra un proyecto en caos sin escribir nada",
-            "Representa un cliente frustrado",
-            "Explica qué es colaborar",
-            "Explica tu trabajo diario… sin usar texto"
-        ];
+        let state = {
+            agentName: '',
+            agentAlias: '',
+            agentPhoto: '',
+            userId: null,
+            progress: 0,
+            completedMissions: [],
+            timeLeft: 174615,
+            isAuthenticated: false
+        };
 
-        // --- EXPORTACIÓN AL ÁMBITO GLOBAL ---
+        let app, auth, db, appId;
+
+        // --- SISTEMA ---
+        const startApp = () => {
+            try {
+                const firebaseConfig = JSON.parse(__firebase_config);
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'operacion-neon-bootcamp';
+                
+                onAuthStateChanged(auth, async (user) => {
+                    if (user && state.agentName && !state.isAuthenticated) {
+                        await finishAccess(user);
+                    }
+                });
+            } catch (e) { console.error("Firebase fail"); }
+        };
+
         window.handleLogin = async () => {
             const loginBtn = document.getElementById('login-btn');
-            const nameInput = document.getElementById('agent-input');
-            const name = nameInput.value.trim();
-            if (!name) return;
+            const alias = document.getElementById('agent-input').value.trim();
+            if (!alias) return;
 
             loginBtn.disabled = true;
             loginBtn.innerText = "ACCEDIENDO...";
-            state.agentName = name;
             
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
+                // Validación contra Sheets
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: "validateAlias", alias: alias })
+                });
+                const result = await response.json();
+                
+                if (result.result === "success") {
+                    state.agentName = result.agente;
+                    state.agentAlias = alias;
+                    state.agentPhoto = result.foto;
+
+                    // Firebase Auth
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
                 } else {
-                    await signInAnonymously(auth);
+                    throw new Error("Invalid Alias");
                 }
-            } catch (error) {
-                console.error("Auth Error:", error);
-                document.getElementById('login-error').classList.remove('hidden');
+            } catch (e) {
                 loginBtn.disabled = false;
                 loginBtn.innerText = "REINTENTAR";
+                document.getElementById('login-error').classList.remove('hidden');
             }
+        };
+
+        const finishAccess = async (user) => {
+            state.isAuthenticated = true;
+            state.userId = user.uid;
+            
+            const agentRef = doc(db, 'artifacts', appId, 'public', 'data', 'agents', user.uid);
+            const snap = await getDoc(agentRef);
+            
+            if (snap.exists()) {
+                const d = snap.data();
+                state.completedMissions = d.completedMissions || [];
+                state.progress = d.progress || 0;
+            } else {
+                await setDoc(agentRef, {
+                    name: state.agentName,
+                    alias: state.agentAlias,
+                    photo: state.agentPhoto,
+                    completedMissions: [],
+                    progress: 0,
+                    createdAt: serverTimestamp()
+                });
+                await syncToSheets("Acceso Validado", `Perfil: ${state.agentName}`);
+            }
+
+            document.getElementById('login-overlay').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            initDashboard();
+            startListeners();
+        };
+
+        const initDashboard = () => {
+            document.getElementById('display-agent-name').innerText = state.agentName;
+            document.getElementById('agent-footer-id').innerText = `Alias: ${state.agentAlias}`;
+            
+            // Cargar imagen de perfil
+            const imgContainer = document.getElementById('agent-image-container');
+            const placeholder = document.getElementById('agent-icon-placeholder');
+            
+            if (state.agentPhoto) {
+                imgContainer.innerHTML = `<img src="${state.agentPhoto}" alt="Agente" class="w-full h-full object-cover" onerror="this.style.display='none'; document.getElementById('agent-icon-placeholder').style.display='block';">`;
+            }
+
+            renderMissions();
+            renderBadges();
+            updateProgress();
+            lucide.createIcons();
+        };
+
+        // --- FUNCIONES COMUNES ---
+        const syncToSheets = async (action, detail) => {
+            const indicator = document.getElementById('sync-indicator');
+            indicator.classList.remove('hidden');
+            indicator.classList.add('flex');
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({
+                        agentName: state.agentName,
+                        action,
+                        progress: state.progress,
+                        completedMissions: state.completedMissions,
+                        detail: detail || ""
+                    })
+                });
+            } catch (e) {}
+            setTimeout(() => indicator.classList.replace('flex', 'hidden'), 1000);
         };
 
         window.setMission = (id) => {
             state.currentMissionId = id;
             const container = document.getElementById('mission-content');
-            
             if (id === 1) {
-                const randomReto = miniRetos[Math.floor(Math.random() * miniRetos.length)];
                 container.innerHTML = `
-                    <div class="space-y-6">
+                    <div class="space-y-4">
                         <div class="bg-cyan-900/10 border border-cyan-500/30 p-4 rounded text-center">
-                            <h3 class="text-cyan-400 font-bold mb-2 uppercase text-xs">Reto Visual</h3>
-                            <p class="text-xl italic text-white">"${randomReto}"</p>
+                            <h3 class="text-cyan-400 font-bold uppercase text-xs">Misión Visual</h3>
+                            <p class="text-xl italic">"Explica tu trabajo con Emojis"</p>
                         </div>
-                        <textarea id="m1-data" placeholder="Pega tus Emojis aquí..." class="w-full bg-black/40 border border-white/10 rounded-lg p-4 text-3xl focus:ring-0 resize-none h-32"></textarea>
-                        <button id="complete-m1" onclick="window.completeMission(1)" class="w-full bg-pink-600 hover:bg-pink-500 py-4 rounded uppercase font-bold">Transmitir Misión 1</button>
+                        <textarea id="m1-data" class="w-full bg-black/40 border border-white/10 rounded-lg p-4 text-3xl h-32 focus:ring-1 focus:ring-cyan-500"></textarea>
+                        <button id="complete-m1" onclick="window.completeMission(1)" class="w-full bg-pink-600 hover:bg-pink-500 py-4 rounded uppercase font-bold">Enviar</button>
                     </div>
                 `;
             } else if (id === 2) {
                 container.innerHTML = `
-                    <div class="space-y-6">
-                        <h3 class="text-pink-500 font-bold uppercase text-xs tracking-widest">Inteligencia de Video</h3>
+                    <div class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <iframe class="w-full aspect-video rounded border border-white/10" src="https://www.youtube.com/embed/l0hVIH3EnlQ"></iframe>
-                            <iframe class="w-full aspect-video rounded border border-white/10" src="https://www.youtube.com/embed/x02iTy9bBQs"></iframe>
+                            <iframe class="w-full aspect-video rounded border" src="https://www.youtube.com/embed/l0hVIH3EnlQ"></iframe>
+                            <iframe class="w-full aspect-video rounded border" src="https://www.youtube.com/embed/x02iTy9bBQs"></iframe>
                         </div>
-                        <textarea id="m2-data" class="w-full bg-black/40 border border-white/10 p-4 rounded text-sm" placeholder="Resumen del aprendizaje táctico..."></textarea>
-                        <button id="complete-m2" onclick="window.completeMission(2)" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded uppercase font-bold">Enviar Reporte 2</button>
+                        <textarea id="m2-data" class="w-full bg-black/40 border p-4 rounded text-sm h-24" placeholder="Reporte de video..."></textarea>
+                        <button id="complete-m2" onclick="window.completeMission(2)" class="w-full bg-cyan-600 py-4 rounded uppercase font-bold">Enviar</button>
                     </div>
                 `;
             } else if (id === 3) {
                 container.innerHTML = `
-                    <div class="space-y-6 text-center">
-                        <div class="bg-cyan-900/10 border border-cyan-500/30 p-6 rounded-lg">
-                            <h3 class="text-cyan-400 font-bold mb-4 uppercase text-xs">Verdad Universal</h3>
+                    <div class="space-y-4 text-center">
+                        <div class="bg-cyan-900/10 border p-6 rounded-lg">
                             <p class="text-lg text-white mb-6">"Escribe algo que todos saben… pero nadie aplica."</p>
-                            <textarea id="m3-data" class="w-full bg-black/60 border border-cyan-500/50 p-4 rounded text-cyan-100" placeholder="Aporta tu sabiduría..."></textarea>
+                            <textarea id="m3-data" class="w-full bg-black/60 border p-4 rounded text-cyan-100 h-32" placeholder="Tu reflexión..."></textarea>
                         </div>
-                        <button id="complete-m3" onclick="window.completeMission(3)" class="w-full bg-gradient-to-r from-pink-600 to-cyan-600 py-5 rounded-lg uppercase font-black">Finalizar Misión 3</button>
+                        <button id="complete-m3" onclick="window.completeMission(3)" class="w-full bg-gradient-to-r from-pink-600 to-cyan-600 py-5 rounded-lg uppercase font-black">Finalizar</button>
                     </div>
                 `;
             }
@@ -299,140 +373,55 @@
         };
 
         window.completeMission = async (id) => {
-            if (!auth.currentUser) return;
             const btn = document.getElementById(`complete-m${id}`);
             const detail = document.getElementById(`m${id}-data`)?.value || "";
-            
-            btn.disabled = true;
-            btn.innerText = "REGISTRANDO...";
-
+            btn.disabled = true; btn.innerText = "ENVIANDO...";
             try {
-                if (!state.completedMissions.includes(id)) {
-                    state.completedMissions.push(id);
-                }
+                if (!state.completedMissions.includes(id)) state.completedMissions.push(id);
                 state.currentMissionId = null;
-                
-                const agentRef = doc(db, 'artifacts', appId, 'public', 'data', 'agents', auth.currentUser.uid);
+                const agentRef = doc(db, 'artifacts', appId, 'public', 'data', 'agents', state.userId);
                 const newProgress = Math.round((state.completedMissions.length / missions.length) * 100);
-                
-                await updateDoc(agentRef, {
-                    completedMissions: state.completedMissions,
-                    progress: newProgress,
-                    lastUpdate: serverTimestamp()
-                });
-
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'comments'), {
-                    user: state.agentName,
-                    text: `¡Misión ${id} completada exitosamente! Registro en Sheets enviado.`,
-                    type: 'system',
-                    timestamp: serverTimestamp()
-                });
-
-                // Sincronización crucial con Google Sheets
-                await syncToSheets(`Misión ${id} completada`, detail);
-                
+                await updateDoc(agentRef, { completedMissions: state.completedMissions, progress: newProgress, lastUpdate: serverTimestamp() });
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'comments'), { user: state.agentName, text: `¡Misión ${id} completada!`, type: 'system', timestamp: serverTimestamp() });
+                await syncToSheets(`Misión ${id}`, detail);
                 initDashboard();
-                checkCompletion();
-            } catch (e) {
-                console.error("Mission Complete Error:", e);
-                btn.disabled = false;
-                btn.innerText = "REINTENTAR ENVÍO";
-            }
+                if (state.completedMissions.length === 3) document.getElementById('mission-content').innerHTML = `<div class="h-full flex flex-col items-center justify-center text-center space-y-4"><i data-lucide="trophy" class="w-16 h-16 text-yellow-400"></i><p class="text-xl font-bold">¡OPERACIÓN EXITOSA AGENTE!</p></div>`;
+                lucide.createIcons();
+            } catch (e) { btn.disabled = false; }
         };
 
         window.sendComment = async () => {
-            if (!auth.currentUser) return;
             const input = document.getElementById('chat-input');
-            const btn = document.getElementById('send-btn');
             const text = input.value.trim();
-            if (!text) return;
-
-            btn.disabled = true;
-            input.value = '';
-
-            try {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'comments'), {
-                    user: state.agentName,
-                    text: text,
-                    type: 'text',
-                    timestamp: serverTimestamp()
-                });
-                await syncToSheets("Comentario enviado", text);
-            } catch (e) { console.error(e); } finally {
-                btn.disabled = false;
-            }
-        };
-
-        // --- SISTEMA ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user && state.agentName && !state.isAuthenticated) {
-                state.isAuthenticated = true;
-                state.userId = user.uid;
-                
-                const agentRef = doc(db, 'artifacts', appId, 'public', 'data', 'agents', user.uid);
-                try {
-                    const snap = await getDoc(agentRef);
-                    if (snap.exists()) {
-                        const d = snap.data();
-                        state.completedMissions = d.completedMissions || [];
-                        state.progress = d.progress || 0;
-                        state.agentName = d.name || state.agentName;
-                    }
-                    
-                    document.getElementById('login-overlay').classList.add('hidden');
-                    document.getElementById('dashboard').classList.remove('hidden');
-                    initDashboard();
-                    startListeners();
-                    
-                    // Notificar ingreso inicial a Sheets
-                    if (!snap.exists()) {
-                        await syncToSheets("Nuevo Agente Ingresado", "Primer acceso al dashboard");
-                    }
-                } catch (e) { console.error("Firestore Init Error:", e); }
-            }
-        });
-
-        const initDashboard = () => {
-            document.getElementById('display-agent-name').innerText = state.agentName;
-            document.getElementById('agent-footer-id').innerText = `Agente ID: ${state.userId}`;
-            renderMissions();
-            renderBadges();
-            updateProgress();
-            lucide.createIcons();
+            if (!text) return; input.value = '';
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'comments'), { user: state.agentName, text, type: 'text', timestamp: serverTimestamp() });
+            await syncToSheets("Comentario", text);
         };
 
         const renderMissions = () => {
             const list = document.getElementById('mission-list');
-            list.innerHTML = missions.map(m => {
-                const complete = state.completedMissions.includes(m.id);
-                const active = state.currentMissionId === m.id;
-                return `
-                    <button onclick="window.setMission(${m.id})" ${complete ? 'disabled' : ''} 
-                        class="w-full text-left p-3 rounded border transition-all flex items-center justify-between group 
-                        ${complete ? 'bg-emerald-950/30 border-emerald-500/50 text-emerald-400' : 
-                          active ? 'bg-pink-900/20 border-pink-500 text-pink-100' : 
-                          'bg-black/20 border-white/5 hover:border-pink-500/50 text-gray-400'}">
-                        <span class="text-xs font-bold">${m.id}. ${m.title}</span>
-                        <i data-lucide="${complete ? 'check-circle' : 'lock'}" class="w-4 h-4 ${complete ? '' : 'opacity-40'}"></i>
-                    </button>
-                `;
-            }).join('');
+            list.innerHTML = missions.map(m => `
+                <button onclick="window.setMission(${m.id})" ${state.completedMissions.includes(m.id) ? 'disabled' : ''} 
+                    class="w-full text-left p-3 rounded border flex items-center justify-between group 
+                    ${state.completedMissions.includes(m.id) ? 'bg-emerald-950/30 border-emerald-500/50 text-emerald-400' : 
+                      state.currentMissionId === m.id ? 'bg-pink-900/20 border-pink-500 text-pink-100' : 'bg-black/20 border-white/5 text-gray-400'}">
+                    <span class="text-xs font-bold">${m.id}. ${m.title}</span>
+                    <i data-lucide="${state.completedMissions.includes(m.id) ? 'check-circle' : 'lock'}" class="w-4 h-4"></i>
+                </button>
+            `).join('');
             lucide.createIcons();
         };
 
         const renderBadges = () => {
             const list = document.getElementById('badge-list');
-            list.innerHTML = missions.map(m => {
-                const complete = state.completedMissions.includes(m.id);
-                return `
-                    <div class="flex flex-col items-center gap-1 transition-all ${complete ? 'opacity-100 scale-100' : 'opacity-10 grayscale scale-90'}">
-                        <div class="w-12 h-12 rounded-full border-2 border-pink-500 flex items-center justify-center bg-pink-500/10">
-                            <i data-lucide="shield" class="w-6 h-6 text-pink-500"></i>
-                        </div>
-                        <span class="text-[8px] text-center w-16 uppercase leading-tight">${m.badge}</span>
+            list.innerHTML = missions.map(m => `
+                <div class="flex flex-col items-center gap-1 transition-all ${state.completedMissions.includes(m.id) ? 'opacity-100' : 'opacity-10 grayscale'}">
+                    <div class="w-12 h-12 rounded-full border-2 border-pink-500 flex items-center justify-center bg-pink-500/10">
+                        <i data-lucide="shield" class="w-6 h-6 text-pink-500"></i>
                     </div>
-                `;
-            }).join('');
+                    <span class="text-[8px] text-center w-16 uppercase leading-tight">${m.badge}</span>
+                </div>
+            `).join('');
             lucide.createIcons();
         };
 
@@ -443,34 +432,27 @@
             document.getElementById('progress-bar').style.width = `${percent}%`;
         };
 
-        const checkCompletion = () => {
-            if (state.completedMissions.length === 3) {
-                document.getElementById('mission-content').innerHTML = `
-                    <div class="h-full flex flex-col items-center justify-center text-center space-y-6 animate-in zoom-in-95">
-                        <i data-lucide="trophy" class="w-20 h-20 text-yellow-400 animate-bounce"></i>
-                        <h3 class="text-3xl font-bold uppercase tracking-widest">¡Extracción Exitosa!</h3>
-                        <p class="text-cyan-400 font-bold uppercase tracking-widest text-xs">Agente certificado para el bootcamp</p>
-                        <p class="text-[10px] text-gray-500 uppercase">Todos tus datos han sido sincronizados con la hoja central.</p>
-                    </div>
-                `;
-                lucide.createIcons();
-            }
-        };
-
         const startListeners = () => {
             const q = collection(db, 'artifacts', appId, 'public', 'data', 'comments');
             onSnapshot(q, (snap) => {
                 const msgs = snap.docs.map(d => d.data());
                 msgs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-                renderChat(msgs);
-            }, (e) => console.error("Chat Snapshot Error:", e));
-
+                document.getElementById('chat-messages').innerHTML = msgs.map(c => `
+                    <div class="flex gap-3 items-start animate-in fade-in">
+                        <div class="bg-white/5 p-3 rounded-lg flex-grow border border-white/5">
+                           <div class="flex justify-between items-center mb-1">
+                              <span class="text-[10px] font-bold text-cyan-400 uppercase">${c.user}</span>
+                              <span class="text-[8px] text-gray-600">${c.timestamp?.seconds ? new Date(c.timestamp.seconds * 1000).toLocaleTimeString() : '...'}</span>
+                           </div>
+                           <p class="text-[11px] leading-relaxed ${c.type === 'system' ? 'text-cyan-200/70 italic' : 'text-gray-300'}">${c.text}</p>
+                        </div>
+                    </div>
+                `).join('');
+            });
             setInterval(() => {
                 if (state.timeLeft > 0) {
                     state.timeLeft--;
-                    const h = Math.floor(state.timeLeft / 3600);
-                    const m = Math.floor((state.timeLeft % 3600) / 60);
-                    const s = state.timeLeft % 60;
+                    const h = Math.floor(state.timeLeft / 3600); const m = Math.floor((state.timeLeft % 3600) / 60); const s = state.timeLeft % 60;
                     document.getElementById('timer-h').innerText = String(h).padStart(2, '0');
                     document.getElementById('timer-m').innerText = String(m).padStart(2, '0');
                     document.getElementById('timer-s').innerText = String(s).padStart(2, '0');
@@ -478,56 +460,7 @@
             }, 1000);
         };
 
-        const renderChat = (messages) => {
-            const feed = document.getElementById('chat-messages');
-            feed.innerHTML = messages.map(c => `
-                <div class="flex gap-3 items-start animate-in fade-in duration-300">
-                    <div class="w-8 h-8 rounded flex-shrink-0 flex items-center justify-center ${c.type === 'system' ? 'bg-cyan-500/20' : 'bg-pink-500/20'}">
-                       <i data-lucide="user" class="w-4 h-4 ${c.type === 'system' ? 'text-cyan-500' : 'text-pink-500'}"></i>
-                    </div>
-                    <div class="bg-white/5 p-3 rounded-lg flex-grow border border-white/5 shadow-inner">
-                       <div class="flex justify-between items-center mb-1">
-                          <span class="text-[10px] font-bold text-cyan-400 uppercase tracking-wider">${c.user}</span>
-                          <span class="text-[8px] text-gray-600">${c.timestamp?.seconds ? new Date(c.timestamp.seconds * 1000).toLocaleTimeString() : 'Enviando...'}</span>
-                       </div>
-                       <p class="text-[11px] leading-relaxed ${c.type === 'system' ? 'text-cyan-200/70 italic' : 'text-gray-300'}">${c.text}</p>
-                    </div>
-                </div>
-            `).join('');
-            lucide.createIcons();
-        };
-
-        const syncToSheets = async (action, detail) => {
-            const indicator = document.getElementById('sync-indicator');
-            indicator.classList.remove('hidden');
-            indicator.classList.add('flex');
-            
-            try {
-                // Apps Script requiere POST con no-cors para evitar problemas de redirección en el navegador
-                await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    cache: 'no-cache',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        agentName: state.agentName,
-                        action: action,
-                        progress: state.progress,
-                        completedMissions: state.completedMissions,
-                        detail: detail
-                    })
-                });
-            } catch (e) { 
-                console.error("Sheets Sinc Error:", e); 
-            } finally {
-                setTimeout(() => {
-                    indicator.classList.remove('flex');
-                    indicator.classList.add('hidden');
-                }, 1500);
-            }
-        };
-
-        // Inicializar iconos
+        startApp();
         lucide.createIcons();
     </script>
 </body>
